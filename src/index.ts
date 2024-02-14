@@ -1,2 +1,2 @@
 
-export * from './curl-http-client.js';
+export * from './curl-http-client';

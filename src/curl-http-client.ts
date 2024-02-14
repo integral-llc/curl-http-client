@@ -15,7 +15,7 @@ interface Config {
   method?: string;
 }
 
-interface AxiosResponse<T = unknown> {
+interface CurlHttpClientResponse<T = unknown> {
   data: T;
   status: number;
   statusText: string;
@@ -24,14 +24,14 @@ interface AxiosResponse<T = unknown> {
   request: { command: string };
 }
 
-export class AxiosError<T = unknown> extends Error {
-  public response: AxiosResponse<T>;
+export class CurlHttpClientError<T = unknown> extends Error {
+  public response: CurlHttpClientResponse<T>;
 
   public config: Config;
 
   public request: unknown;
 
-  constructor(message: string, config: Config, request: unknown, response: AxiosResponse<T>) {
+  constructor(message: string, config: Config, request: unknown, response: CurlHttpClientResponse<T>) {
     super(message);
     this.name = 'AxiosError';
     this.response = response;
@@ -40,7 +40,7 @@ export class AxiosError<T = unknown> extends Error {
   }
 }
 
-export class CurlAxios {
+export class CurlHttpClient {
   private static prepareHeaders(headers: Headers): string[] {
     const curlHeaders: string[] = [];
 
@@ -85,16 +85,16 @@ export class CurlAxios {
     stdout: string,
     config: Config,
     command: string
-  ): AxiosResponse<T> {
+  ): CurlHttpClientResponse<T> {
     const [headerPart, ...bodyParts] = stdout.split('\r\n\r\n');
     const body = bodyParts.join('\r\n\r\n');
-    const headers = CurlAxios.parseHeaders(headerPart);
+    const headers = CurlHttpClient.parseHeaders(headerPart);
     const statusLine = headerPart.split('\r\n')[0];
     const statusMatch = statusLine?.match(/HTTP\/\d\.\d (\d{3}) (.*)/);
     const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : 0;
     const statusText = statusMatch && statusMatch[2] ? statusMatch[2] : '';
     if (statusCode === 100) {
-      return CurlAxios.handleResponse<T>(body, config, command);
+      return CurlHttpClient.handleResponse<T>(body, config, command);
     }
 
     // Attempt to parse the body as JSON if the content-type is 'application/json'
@@ -108,7 +108,7 @@ export class CurlAxios {
 
       // Check if the status code indicates an error
       if (statusCode < 200 || statusCode >= 300) {
-        throw new AxiosError(
+        throw new CurlHttpClientError(
           `Request failed with status code ${statusCode}`,
           config,
           { command },
@@ -188,35 +188,35 @@ export class CurlAxios {
   public static async get<T = unknown>(
     url: string,
     config: Config = {}
-  ): Promise<AxiosResponse<T>> {
-    const headers = CurlAxios.prepareHeaders(config.headers || {});
+  ): Promise<CurlHttpClientResponse<T>> {
+    const headers = CurlHttpClient.prepareHeaders(config.headers || {});
     const encodedUrl = encodeURI(url);
     const curlCommand = ['curl', '-i', '-s', '-S', '-X', 'GET', ...headers, encodedUrl];
     const command = curlCommand.join(' ');
-    const stdout = await CurlAxios.executeCurlCommand(curlCommand);
-    return CurlAxios.handleResponse<T>(stdout, { ...config, url, method: 'GET' }, command);
+    const stdout = await CurlHttpClient.executeCurlCommand(curlCommand);
+    return CurlHttpClient.handleResponse<T>(stdout, { ...config, url, method: 'GET' }, command);
   }
 
   public static async post<T = unknown>(
     url: string,
     config: Config = {}
-  ): Promise<AxiosResponse<T>> {
-    return CurlAxios.sendData<T>('POST', url, config);
+  ): Promise<CurlHttpClientResponse<T>> {
+    return CurlHttpClient.sendData<T>('POST', url, config);
   }
 
   public static async put<T = unknown>(
     url: string,
     config: Config = {}
-  ): Promise<AxiosResponse<T>> {
-    return CurlAxios.sendData<T>('PUT', url, config);
+  ): Promise<CurlHttpClientResponse<T>> {
+    return CurlHttpClient.sendData<T>('PUT', url, config);
   }
 
   private static async sendData<T>(
     method: string,
     url: string,
     config: Config
-  ): Promise<AxiosResponse<T>> {
-    const headers = CurlAxios.prepareHeaders(config.headers || {});
+  ): Promise<CurlHttpClientResponse<T>> {
+    const headers = CurlHttpClient.prepareHeaders(config.headers || {});
     const encodedUrl = encodeURI(url);
     const contentType = config.headers?.['Content-Type'] || '';
     let command: string;
@@ -235,10 +235,10 @@ export class CurlAxios {
         data,
         encodedUrl,
       ];
-      const stdout = await CurlAxios.executeCurlCommand(curlCommand);
-      return CurlAxios.handleResponse<T>(stdout, { ...config, url, method }, command);
+      const stdout = await CurlHttpClient.executeCurlCommand(curlCommand);
+      return CurlHttpClient.handleResponse<T>(stdout, { ...config, url, method }, command);
     }
-    return CurlAxios.executeCurlWithStream(method, encodedUrl, headers, config.data || {});
+    return CurlHttpClient.executeCurlWithStream(method, encodedUrl, headers, config.data || {});
   }
 
   private static async executeCurlWithStream<T = unknown>(
@@ -246,7 +246,7 @@ export class CurlAxios {
     url: string,
     headers: string[],
     data: Record<string, unknown> | string | Buffer | fs.ReadStream
-  ): Promise<AxiosResponse<T>> {
+  ): Promise<CurlHttpClientResponse<T>> {
     return new Promise((resolve, reject) => {
       const boundary = `----CurlAxiosFormBoundary${Math.random().toString(16)}`;
       headers.push('-H', `Content-Type: multipart/form-data; boundary=${boundary}`);
@@ -287,7 +287,7 @@ export class CurlAxios {
               )}"\r\n`
             );
             curl.stdin.write(
-              `Content-Type: ${CurlAxios.getContentType(fileStream.path.toString())}\r\n\r\n`
+              `Content-Type: ${CurlHttpClient.getContentType(fileStream.path.toString())}\r\n\r\n`
             );
             fileStream.on('error', reject).pipe(curl.stdin, { end: false });
             fileStream.on('end', () => {
@@ -340,7 +340,7 @@ export class CurlAxios {
       curl.on('close', (code) => {
         if (code === 0) {
           resolve(
-            CurlAxios.handleResponse(
+            CurlHttpClient.handleResponse(
               stdout,
               { headers: {}, url, method },
               'curl command with stream'
