@@ -1,5 +1,6 @@
 import { CurlHttpClient } from "../curl-http-client";
 import * as fs from "fs";
+import path from "path";
 
 const obj = {
   numberField: 1,
@@ -14,8 +15,8 @@ const obj = {
 
 const data = {
   "jsonKey": JSON.stringify(obj),
-  "file1": fs.readFileSync('./assets/file1.txt'),
-  "file2": fs.readFileSync('./assets/file2.txt'),
+  "file1": fs.readFileSync('./src/tests/assets/file1.txt'),
+  "file2": fs.readFileSync('./src/tests/assets/file2.txt'),
 };
 
 const request = {
@@ -28,8 +29,13 @@ const request = {
 };
 
 async function main() {
+  // display current directory
+  console.log(`main:main#`, path.resolve('.'));
+
   const response = await CurlHttpClient.post('https://webhook.site/0ccafd1a-b758-4af4-bcfd-442d1b717290'
     , request);
+
+  console.log(`main:main#`, response.status, response.data);
 }
 
 main();
