@@ -33,7 +33,7 @@ export class CurlHttpClientError<T = unknown> extends Error {
 
   constructor(message: string, config: Config, request: unknown, response: CurlHttpClientResponse<T>) {
     super(message);
-    this.name = 'AxiosError';
+    this.name = 'CurlHttpClientError';
     this.response = response;
     this.config = config;
     this.request = request;
@@ -248,7 +248,7 @@ export class CurlHttpClient {
     data: Record<string, unknown> | string | Buffer | fs.ReadStream
   ): Promise<CurlHttpClientResponse<T>> {
     return new Promise((resolve, reject) => {
-      const boundary = `----CurlAxiosFormBoundary${Math.random().toString(16)}`;
+      const boundary = `----CurlHttpClientFormBoundary${Math.random().toString(16)}`;
       headers.push('-H', `Content-Type: multipart/form-data; boundary=${boundary}`);
 
       // remove double quotes from header values

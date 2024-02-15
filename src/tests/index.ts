@@ -29,9 +29,6 @@ const request = {
 };
 
 async function main() {
-  // display current directory
-  console.log(`main:main#`, path.resolve('.'));
-
   const response = await CurlHttpClient.post('https://webhook.site/0ccafd1a-b758-4af4-bcfd-442d1b717290'
     , request);
 
