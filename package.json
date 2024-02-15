@@ -1,0 +1,27 @@
+{
+  "name": "curl-http-client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --fix",
+    "test1": "ts-node src/tests/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/integral-llc/curl-http-client"
+  },
+  "private": true,
+  "dependencies": {
+    "@types/node": "^20.11.17"
+  },
+  "devDependencies": {
+    "@tsconfig/node-lts": "^20.1.1",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "@typescript-eslint/parser": "^7.0.1",
+    "eslint": "^8.56.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
