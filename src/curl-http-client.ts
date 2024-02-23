@@ -81,6 +81,11 @@ export class CurlHttpClient {
     });
   }
 
+  private static isJson(contentType: string): boolean {
+    return contentType && contentType.includes('application/json')
+      || contentType.includes('application/hal+json');
+  }
+
   private static handleResponse<T>(
     stdout: string,
     config: Config,
@@ -100,7 +105,7 @@ export class CurlHttpClient {
     // Attempt to parse the body as JSON if the content-type is 'application/json'
     let data: T | string;
     try {
-      if (headers['Content-Type'] && headers['Content-Type'].includes('application/json')) {
+      if (CurlHttpClient.isJson(headers['Content-Type']) && body.length > 0) {
         data = JSON.parse(body) as T;
       } else {
         data = body;
